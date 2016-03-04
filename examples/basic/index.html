@@ -5,27 +5,38 @@
   </head>
   <body>
     <a-scene>
-      <a-entity interpolation="1000ms" id="orange" geometry="primitive: box" material="color: #ff7700"></a-entity>
+      <a-light intensity="1.5" color="white" position="5 5 5"></a-light>
+      <a-sky color="#acf"></a-sky>
+
+      <a-entity interpolation="200ms" id="orange" geometry="primitive: box" material="color: #ff7700"></a-entity>
+
+      <a-entity interpolation="100ms" id="pink" geometry="primitive: box" material="color: #ff00aa"></a-entity>
 
       <a-entity rotation="-90 0 0" geometry="primitive: plane; width: 64; height: 64;" material="repeat: 64 64; src: url(https://assets-scenevr-com.s3-us-west-1.amazonaws.com/prerelease/images/grid.png)"></a-entity>
 
     </a-scene>
 
     <script>
-      var el = document.querySelector('#orange');
-      var v = new THREE.Vector3(0, 1, 0);
-      var r = new THREE.Vector3(0, 0, 0);
+      function rotate(el, radius) {
+        var v = new THREE.Vector3(0, 1, 0);
+        var r = new THREE.Vector3(0, 0, 0);
+        var ts = parseInt(el.getAttribute('interpolation'), 10);
 
-      setInterval(function () {
-        var t = performance.now() / 1000.0;
-        v.x = Math.sin(t) * 10;
-        v.y = 1.5;
-        v.z = Math.cos(t) * 10 - 20;
-        el.setAttribute('position', v);
+        setInterval(function () {
+          var t = performance.now() / 1000.0;
+          v.x = Math.sin(t) * radius;
+          v.y = 1.5;
+          v.z = Math.cos(t) * radius - 20;
+          el.setAttribute('position', v);
 
-        r.z += 45;
-        el.setAttribute('rotation', r);
-      }, 1000);
+          r.x += 10;
+          r.z += 45;
+          el.setAttribute('rotation', r);
+        }, ts);
+      }
+
+      rotate(document.querySelector('#orange'), 20);
+      rotate(document.querySelector('#pink'), -10);
     </script>
   </body>
 </html>
