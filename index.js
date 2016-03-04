@@ -4,54 +4,93 @@ if (typeof AFRAME === 'undefined') {
   throw new Error('Component attempted to register before AFRAME was available.');
 }
 
-function Interpolator (timestep, entity) {
-  var self = this;
+function getMillis () {
+  return new Date().getTime();
+}
 
-  function getMillis () {
-    return new Date().getTime();
-  }
-
-  this.time = getMillis();
-
-  this.previous = {
-    position: null
-  };
-
-  this.next = {
-    position: null
-  };
+function PositionInterpolator (timestep, entity) {
+  var time = getMillis();
+  var previous;
+  var next;
 
   entity.el.addEventListener('componentchanged', function (event) {
+    if (getTime() < 0.5) {
+      // fixme - ignore multiple calls
+      return;
+    }
+
     if (event.detail.name === 'position') {
-      if (!self.previous.position) {
-        console.log('?');
-        self.previous.position = new THREE.Vector3();
-        self.next.position = new THREE.Vector3();
+      if (!previous) {
+        previous = new THREE.Vector3();
+        next = new THREE.Vector3();
       }
 
-      if (getTime() < 0.5) {
-        // ignore multiple calls
-        return;
-      }
-
-      self.time = getMillis();
-      self.previous.position.copy(self.next.position);
-      self.next.position.copy(event.detail.newData);
+      time = getMillis();
+      previous.copy(next);
+      next.copy(event.detail.newData);
     }
   });
 
   function getTime () {
-    return (getMillis() - self.time) / timestep;
+    return (getMillis() - time) / timestep;
   }
 
   this.active = function () {
-    return self.previous.position && self.next.position && (getTime() < 1.0);
+    return previous && next && (getTime() < 1.0);
   };
 
   var v = new THREE.Vector3();
 
-  this.getPosition = function () {
-    return v.lerpVectors(self.previous.position, self.next.position, getTime());
+  this.get = function () {
+    return v.lerpVectors(previous, next, getTime());
+  };
+}
+
+function radians(degrees) {
+  return degrees * Math.PI / 180.0;
+}
+
+function RotationInterpolator (timestep, entity) {
+  var time = getMillis();
+  var previous;
+  var next;
+
+  entity.el.addEventListener('componentchanged', function (event) {
+    if (getTime() < 0.5) {
+      // fixme - ignore multiple calls
+      return;
+    }
+
+    if (event.detail.name === 'rotation') {
+      if (!previous) {
+        previous = new THREE.Quaternion();
+        next = new THREE.Quaternion();
+      }
+
+      time = getMillis();
+      previous.copy(next);
+      next.setFromEuler(new THREE.Euler(
+        radians(event.detail.newData.x),
+        radians(event.detail.newData.y),
+        radians(event.detail.newData.z)
+      ));
+    }
+
+  });
+
+  function getTime () {
+    return (getMillis() - time) / timestep;
+  }
+
+  this.active = function () {
+    return previous && next && (getTime() < 1.0);
+  };
+
+  var e = new THREE.Euler();
+  var q = new THREE.Quaternion();
+  this.get = function () {
+    THREE.Quaternion.slerp(previous, next, q, getTime());
+    return e.setFromQuaternion(q);
   };
 }
 
@@ -72,7 +111,9 @@ AFRAME.registerComponent('interpolation', {
   update: function (oldData) {
     if (!this.interpolation) {
       var timestep = parseInt(this.el.getAttribute('interpolation'), 10);
-      this.interpolation = new Interpolator(timestep, this);
+
+      this.positionInterpolator = new PositionInterpolator(timestep, this);
+      this.rotationInterpolator = new RotationInterpolator(timestep, this);
     }
   },
 
@@ -86,8 +127,12 @@ AFRAME.registerComponent('interpolation', {
    * Called on each scene tick.
    */
   tick: function (t) {
-    if (this.interpolation && this.interpolation.active()) {
-      this.el.object3D.position.copy(this.interpolation.getPosition());
+    if (this.positionInterpolator && this.positionInterpolator.active()) {
+      this.el.object3D.position.copy(this.positionInterpolator.get());
+    }
+
+    if (this.rotationInterpolator && this.rotationInterpolator.active()) {
+      this.el.object3D.rotation.copy(this.rotationInterpolator.get());
     }
   },
 
