@@ -5,7 +5,7 @@
   </head>
   <body>
     <a-scene>
-      <a-entity id="orange" geometry="primitive: box" material="color: #ff7700"></a-entity>
+      <a-entity interpolation="1000ms" id="orange" geometry="primitive: box" material="color: #ff7700"></a-entity>
 
       <a-entity rotation="-90 0 0" geometry="primitive: plane; width: 64; height: 64;" material="repeat: 64 64; src: url(https://assets-scenevr-com.s3-us-west-1.amazonaws.com/prerelease/images/grid.png)"></a-entity>
 
@@ -14,13 +14,18 @@
     <script>
       var el = document.querySelector('#orange');
       var v = new THREE.Vector3(0, 1, 0);
+      var r = new THREE.Vector3(0, 0, 0);
 
       setInterval(function () {
         var t = performance.now() / 1000.0;
         v.x = Math.sin(t) * 10;
+        v.y = 1.5;
         v.z = Math.cos(t) * 10 - 20;
-        el.setAttribute('network-position', v);
-      }, 200);
+        el.setAttribute('position', v);
+
+        r.z += 45;
+        el.setAttribute('rotation', r);
+      }, 1000);
     </script>
   </body>
 </html>
