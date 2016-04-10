@@ -75,7 +75,6 @@ function RotationInterpolator (timestep, entity) {
         radians(event.detail.newData.z)
       ));
     }
-
   });
 
   function getTime () {
@@ -98,6 +97,10 @@ function RotationInterpolator (timestep, entity) {
  * Interpolate component for A-Frame.
  */
 AFRAME.registerComponent('interpolation', {
+  schema: {
+    duration: { default: 200 }
+  },
+
   /**
    * Called once when component is attached. Generally for initial setup.
    */
@@ -110,7 +113,7 @@ AFRAME.registerComponent('interpolation', {
    */
   update: function (oldData) {
     if (!this.interpolation) {
-      var timestep = parseInt(this.el.getAttribute('interpolation'), 10);
+      var timestep = parseInt(this.data.duration, 10);
 
       this.positionInterpolator = new PositionInterpolator(timestep, this);
       this.rotationInterpolator = new RotationInterpolator(timestep, this);
